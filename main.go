@@ -1,12 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"net"
 	"strconv"
+	"strings"
 	"time"
-  "strings"
 )
 
 func handleConnection(connection net.Conn, messages [][]string) {
@@ -15,9 +16,9 @@ func handleConnection(connection net.Conn, messages [][]string) {
 	for {
 		for _, block := range messages {
 			for _, message := range block {
-        // Generate a random float between 0 and 360 and reduce the range to 60 degrees
-				bearing := rand.Float64() * 360 / 6. 
-        fmt.Println("Sending message:", modifyBearing(message, bearing))
+				// Generate a random float between 0 and 360 and reduce the range to 60 degrees
+				bearing := rand.Float64() * 360 / 6.
+				fmt.Println("Sending message:", modifyBearing(message, bearing))
 				modifiedMessage := modifyBearing(message, bearing)
 				_, err := connection.Write([]byte(modifiedMessage + "\n"))
 
@@ -38,12 +39,11 @@ func handleConnection(connection net.Conn, messages [][]string) {
 	}
 }
 
-
 func modifyBearing(message string, bearing float64) string {
-  headingString := "INHDT," + strconv.FormatFloat(bearing, 'f', 2, 64) + ",T"
-  checksum := calculateChecksum(headingString)
-  headingMessage := "$" + headingString + "*" + strconv.FormatInt(int64(checksum), 16)
-  return strings.Replace(message, "$INHDT,0.00,T*XX", headingMessage, 1)
+	headingString := "INHDT," + strconv.FormatFloat(bearing, 'f', 2, 64) + ",T"
+	checksum := calculateChecksum(headingString)
+	headingMessage := "$" + headingString + "*" + strconv.FormatInt(int64(checksum), 16)
+	return strings.Replace(message, "$INHDT,0.00,T*XX", headingMessage, 1)
 }
 
 func calculateChecksum(data string) byte {
@@ -57,8 +57,13 @@ func calculateChecksum(data string) byte {
 }
 
 func main() {
-	tcpIP := "127.0.0.1"
-	tcpPort := 5000
+	// Define command-line flags
+	host := flag.String("host", "127.0.0.1", "the host IP address")
+	port := flag.Int("port", 5001, "the port number")
+	flag.Parse()
+
+	tcpIP := *host
+	tcpPort := *port
 
 	nmeaMessages := []string{
 		"$INZDA,163611.11,10,09,2019,,*76",
